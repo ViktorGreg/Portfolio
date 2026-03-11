@@ -1,2 +1,3 @@
-# Portfolio
-Personal portfolio website of Viktor Greg Lim — Front-End Developer &amp; Graphic Designer based in Zamboanga City, Philippines.
+Hi, I'm Viktor Greg Lim, an aspiring Front-End Developer and Graphic Designer based in Zamboanga City, Philippines. I'm passionate about bridging the gap between design and technology — crafting clean, user-centric digital experiences that are both functional and visually compelling.
+I work with tools like Figma, Adobe Photoshop, Canva, HTML, CSS, and JavaScript, and I've been involved with organizations like the Philippine Computing Students Society and Google Developers Group. Currently finishing my BS in Information Technology at Western Mindanao State University.
+This portfolio showcases my projects in brand identity, front-end development, UI/UX design, and photography.
