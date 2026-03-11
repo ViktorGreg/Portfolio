@@ -1,0 +1,99 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Viktor Greg Lim - Portfolio</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Oswald:wght@700&display=swap');
+
+        body {
+            background-color: #232323;
+            /* Recreating the dotted pattern background from the image */
+            background-image: radial-gradient(#3d3d3d 1px, transparent 1px);
+            background-size: 20px 20px;
+            margin: 0;
+            overflow-x: hidden;
+        }
+
+        .header-font {
+            font-family: 'Oswald', sans-serif;
+            letter-spacing: 2px;
+        }
+
+        /* Print Settings */
+        @media print {
+            .no-print { display: none !important; }
+            body { background: white !important; }
+            .cv-container {
+                box-shadow: none !important;
+                margin: 0 !important;
+                width: 100% !important;
+            }
+            .dark-content-area { display: none !important; }
+        }
+
+        .cv-shadow {
+            box-shadow: 20px 20px 60px rgba(0, 0, 0, 0.5);
+        }
+    </style>
+</head>
+<body class="text-white">
+
+    <div class="no-print fixed top-6 left-1/2 -translate-x-1/2 z-50">
+        <button onclick="window.print()" class="bg-[#b38b59] hover:bg-[#8e6e46] text-white px-8 py-3 rounded-md font-bold transition shadow-lg">
+            PRINT / SAVE AS PDF
+        </button>
+    </div>
+
+    <div class="flex flex-col lg:flex-row min-h-screen items-center justify-center p-6 lg:p-20 gap-12">
+        
+        <div class="cv-container w-full max-w-[650px] cv-shadow transition-transform hover:scale-[1.01]">
+            <img src="{% static 'media/images/FoodTrack CV.png' %}" alt="CV Image" class="w-full h-auto block">
+        </div>
+
+        <div class="dark-content-area max-w-xl">
+            <h4 class="text-[#b38b59] font-bold mb-4 header-font">CURRICULUM VITAE <span class="text-gray-500 mx-2">|</span> RESUME</h4>
+            
+            <h1 class="text-4xl md:text-5xl font-bold leading-tight mb-6 uppercase">
+                "Designing clean, functional, and user-focused digital experiences."
+            </h1>
+
+            <p class="text-sm tracking-[0.3em] font-semibold mb-8">
+                FRONT-END DEVELOPER • UI/UX • CREATIVE PROBLEM SOLVER
+            </p>
+
+            <div class="space-y-6 text-gray-300 leading-relaxed uppercase text-sm font-medium">
+                <p>
+                    I am a creative front-end developer with a strong eye for UI/UX design and visual detail. I focus on building clean, user-friendly, and responsive interfaces that strike a balance between functionality and aesthetics.
+                </p>
+                <p>
+                    With a background in information technology and hands-on project experience, I am adaptable, detail-oriented, and driven to continuously improve. I value creativity, problem-solving, and hard work in delivering meaningful digital solutions.
+                </p>
+            </div>
+
+            <div class="mt-12 flex justify-end lg:justify-start">
+                <div class="bg-white p-3 rounded-lg inline-block">
+                    <img src="{% static 'media/images/QR.png' %}" alt="QR" class="w-32 h-32">
+                    <div class="bg-black text-white text-[10px] py-1 px-2 mt-2 rounded-full flex items-center justify-center gap-2">
+                        <span class="bg-white rounded-full w-4 h-4 text-black text-center leading-4 font-bold">i</span>
+                        VIKTOR GREG LIM
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="no-print w-full py-10 flex justify-center items-center gap-8 text-[#b38b59] header-font text-xs md:text-sm">
+        <span>CREATIVITY</span>
+        <div class="w-8 h-[1px] bg-gray-600 rotate-[60deg]"></div>
+        <span>STYLE</span>
+        <div class="w-8 h-[1px] bg-gray-600 rotate-[60deg]"></div>
+        <span>HARD WORK</span>
+    </div>
+
+</body>
+</html>

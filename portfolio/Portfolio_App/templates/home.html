@@ -1,0 +1,842 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Viktor Greg Lim | Portfolio</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        dark: '#1a1a1a',
+                        light: '#f8f9fa',
+                        accent: '#d49a3d',
+                        muted: '#6c757d',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        serif: ['Playfair Display', 'serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;900&family=Playfair+Display:wght@400;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+
+    <style>
+        /* ── Hero text outline ─────────────────────────── */
+        .text-outline {
+            -webkit-text-stroke: 2px #1a1a1a;
+            color: transparent;
+        }
+        .hero-image-container { z-index: 20; }
+        .hero-text-back        { z-index: 10; }
+        .hero-text-front       { z-index: 30; }
+
+        /* ── Animated skill bars ───────────────────────── */
+        .skill-bar-fill {
+            width: 0%;
+            transition: width 1.3s cubic-bezier(0.4, 0, 0.2, 1);
+            background: #d49a3d;
+        }
+        .skill-bar-fill.animate { width: var(--target-width); }
+
+        /* ── Project card hover ────────────────────────── */
+        .project-card { cursor: pointer; }
+        .project-card img { transition: transform 0.5s ease, filter 0.5s ease; }
+        .project-card:hover img { transform: scale(1.07); filter: brightness(0.42); }
+        .card-overlay { opacity: 0; transition: opacity 0.35s ease; }
+        .project-card:hover .card-overlay { opacity: 1; }
+
+        /* ════════════════════════════════════════════════
+           PROJECT MODAL
+        ════════════════════════════════════════════════ */
+        #project-modal {
+            display: none; position: fixed; inset: 0;
+            z-index: 1000; align-items: center;
+            justify-content: center; padding: 1rem;
+        }
+        #project-modal.open { display: flex; }
+        #modal-backdrop {
+            position: absolute; inset: 0;
+            background: rgba(10,10,10,0.88);
+            backdrop-filter: blur(8px);
+        }
+        #modal-box {
+            position: relative; z-index: 10;
+            background: #fff; width: 100%;
+            max-width: 920px; max-height: 92vh;
+            overflow-y: auto; display: flex; flex-direction: column;
+            box-shadow: 0 40px 100px rgba(0,0,0,0.55);
+            border-top: 4px solid #d49a3d;
+            opacity: 0; transform: scale(0.9) translateY(28px);
+            transition: opacity 0.38s ease, transform 0.38s cubic-bezier(0.34, 1.46, 0.64, 1);
+        }
+        #project-modal.open #modal-box { opacity: 1; transform: scale(1) translateY(0); }
+
+        #modal-img-wrap {
+            position: relative; height: 440px;
+            overflow: hidden; background: #111;
+            flex-shrink: 0; cursor: zoom-in;
+        }
+        #modal-img-wrap.zoomed { cursor: zoom-out; }
+        #modal-img {
+            width: 100%; height: 100%; object-fit: cover;
+            object-position: center; transform-origin: center center;
+            filter: brightness(0.93); user-select: none;
+            transition: transform 0.55s cubic-bezier(0.25, 0.46, 0.45, 0.94), filter 0.35s ease;
+            display: block;
+        }
+        #modal-img-wrap:hover #modal-img   { filter: brightness(1); }
+        #modal-img-wrap.zoomed #modal-img  { transform: scale(2.4); filter: brightness(1); }
+        #zoom-hint {
+            position: absolute; bottom: 1rem; right: 1rem;
+            background: rgba(20,20,20,0.72); color: #fff;
+            font-size: 0.68rem; font-weight: 700;
+            letter-spacing: 0.12em; text-transform: uppercase;
+            padding: 0.32rem 0.7rem; pointer-events: none; transition: opacity 0.3s;
+        }
+        #modal-img-wrap.zoomed #zoom-hint { opacity: 0; }
+        #modal-close {
+            position: absolute; top: 0.85rem; right: 0.85rem;
+            width: 38px; height: 38px;
+            background: rgba(15,15,15,0.72); color: #fff;
+            border-radius: 50%; display: flex; align-items: center;
+            justify-content: center; z-index: 30; cursor: pointer; border: none;
+            transition: background 0.2s, transform 0.25s;
+        }
+        #modal-close:hover { background: #d49a3d; transform: rotate(90deg); }
+        .tech-tag {
+            display: inline-flex; align-items: center;
+            background: #f8f9fa; border: 1.5px solid #e4e4e4;
+            color: #1a1a1a; font-size: 0.72rem; font-weight: 700;
+            letter-spacing: 0.08em; text-transform: uppercase;
+            padding: 0.28rem 0.75rem; border-radius: 999px;
+        }
+
+        /* ════════════════════════════════════════════════
+           CONTACT MODAL
+        ════════════════════════════════════════════════ */
+        #contact-modal {
+            display: none; position: fixed; inset: 0;
+            z-index: 1100; align-items: center;
+            justify-content: center; padding: 1rem;
+        }
+        #contact-modal.open { display: flex; }
+
+        #contact-backdrop {
+            position: absolute; inset: 0;
+            background: rgba(8, 8, 8, 0.92);
+            backdrop-filter: blur(12px);
+        }
+
+        #contact-box {
+            position: relative; z-index: 10;
+            width: 100%; max-width: 640px;
+            background: #fff; overflow: hidden;
+            box-shadow: 0 48px 120px rgba(0,0,0,0.65);
+            opacity: 0; transform: scale(0.88) translateY(36px);
+            transition: opacity 0.4s ease,
+                        transform 0.4s cubic-bezier(0.34, 1.46, 0.64, 1);
+        }
+        #contact-modal.open #contact-box {
+            opacity: 1; transform: scale(1) translateY(0);
+        }
+
+        /* Gold bar at top */
+        .contact-gold-bar {
+            height: 5px;
+            background: linear-gradient(90deg, #b8822e 0%, #f0c46e 50%, #b8822e 100%);
+        }
+
+        /* Dark header strip */
+        .contact-header-strip {
+            background: #1a1a1a;
+            padding: 1.75rem 2rem 1.5rem;
+            position: relative;
+        }
+
+        #contact-close {
+            position: absolute; top: 1rem; right: 1rem;
+            width: 34px; height: 34px;
+            background: rgba(255,255,255,0.1);
+            color: #fff; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer; border: none;
+            transition: background 0.2s, transform 0.25s;
+        }
+        #contact-close:hover { background: #d49a3d; transform: rotate(90deg); }
+
+        /* Form body */
+        .contact-body { padding: 2rem; }
+
+        /* Field styles */
+        .c-field { margin-bottom: 1.5rem; }
+        .c-label {
+            display: block;
+            font-size: 0.65rem; font-weight: 700;
+            letter-spacing: 0.15em; text-transform: uppercase;
+            color: #999; margin-bottom: 0.45rem;
+            transition: color 0.25s;
+        }
+        .c-field:focus-within .c-label { color: #d49a3d; }
+        .c-input {
+            width: 100%; border: none;
+            border-bottom: 2px solid #e8e8e8;
+            background: transparent; padding: 0.55rem 0;
+            font-size: 0.95rem; font-family: 'Inter', sans-serif;
+            color: #1a1a1a; outline: none; resize: none;
+            transition: border-color 0.3s;
+        }
+        .c-input::placeholder { color: #ccc; }
+        .c-input:focus { border-color: #d49a3d; }
+
+        /* Send button */
+        #c-send-btn {
+            display: inline-flex; align-items: center; gap: 0.55rem;
+            background: #1a1a1a; color: #fff;
+            border: 2px solid #1a1a1a;
+            padding: 0.85rem 2rem;
+            font-size: 0.75rem; font-weight: 700;
+            letter-spacing: 0.18em; text-transform: uppercase;
+            cursor: pointer; font-family: 'Inter', sans-serif;
+            transition: background 0.25s, border-color 0.25s, transform 0.2s;
+        }
+        #c-send-btn:hover:not(:disabled) {
+            background: #d49a3d; border-color: #d49a3d;
+            transform: translateY(-2px);
+        }
+        #c-send-btn:disabled { opacity: 0.55; cursor: not-allowed; }
+
+        /* Status */
+        .c-status-msg {
+            font-size: 0.82rem; font-weight: 600;
+            padding: 0.6rem 0.9rem; border-radius: 4px; margin-top: 0.75rem;
+        }
+        .c-status-msg.success { background: #edfaf2; color: #1e7e45; border-left: 3px solid #1e7e45; }
+        .c-status-msg.error   { background: #fdf0ef; color: #c0392b; border-left: 3px solid #c0392b; }
+
+        /* Button spinner */
+        .btn-spinner {
+            width: 15px; height: 15px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-top-color: #fff; border-radius: 50%;
+            animation: spin 0.7s linear infinite; flex-shrink: 0;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* ── Scrollbar ─────────────────────────────────── */
+        ::-webkit-scrollbar { width: 5px; }
+        ::-webkit-scrollbar-track { background: #f8f9fa; }
+        ::-webkit-scrollbar-thumb { background: #d49a3d; border-radius: 3px; }
+    </style>
+</head>
+<body class="bg-light text-dark font-sans leading-relaxed">
+
+    <!-- ════════════ NAVBAR ════════════ -->
+    <header class="fixed w-full bg-light/90 backdrop-blur-sm z-50 py-4 shadow-sm transition-all duration-300" id="navbar">
+        <div class="container mx-auto px-6 md:px-12 flex justify-between items-center">
+            <a href="#home" class="font-serif text-3xl font-bold tracking-tighter">Viktor.</a>
+            <nav class="hidden md:flex items-center space-x-8 font-medium uppercase text-sm tracking-wider">
+                <a href="#home"     class="hover:text-accent transition-colors">Home</a>
+                <a href="#about"    class="hover:text-accent transition-colors">About</a>
+                <a href="#projects" class="hover:text-accent transition-colors">Projects</a>
+                <!-- ★ Opens contact modal -->
+                <button id="open-contact-btn"
+                        class="bg-dark text-white px-6 py-3 hover:bg-accent transition-colors font-medium uppercase text-sm tracking-wider">
+                    Contact Me
+                </button>
+            </nav>
+            <button id="mobile-menu-button" class="md:hidden text-dark focus:outline-none">
+                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"/>
+                </svg>
+            </button>
+        </div>
+        <div id="mobile-menu" class="hidden md:hidden bg-light w-full absolute top-full left-0 shadow-md py-4 px-6">
+            <div class="flex flex-col space-y-4 font-medium uppercase text-sm tracking-wider">
+                <a href="#home"     class="hover:text-accent transition-colors mobile-link">Home</a>
+                <a href="#projects" class="hover:text-accent transition-colors mobile-link">Projects</a>
+                <a href="#about"    class="hover:text-accent transition-colors mobile-link">About</a>
+                <button id="open-contact-mobile"
+                        class="bg-dark text-white px-6 py-3 text-center mobile-link w-full">
+                    Contact Me
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main>
+
+        <!-- ════════════ HERO ════════════ -->
+        <section id="home" class="min-h-screen flex flex-col justify-center pt-24 md:pt-25 overflow-hidden relative">
+            <div class="container mx-auto px-6 md:px-12 text-center relative z-10">
+                <p class="text-lg md:text-xl text-muted mb-4">Hi, I'm Viktor Greg, an aspiring Front-End Developer</p>
+                <div class="relative">
+                    <h1 class="hero-text-back font-sans font-black text-[13vw] md:text-[11rem] leading-[0.8] tracking-tighter uppercase">
+                        WebDesigner
+                    </h1>
+                    <div class="hero-image-container relative -mt-[5vw] md:-mt-[8rem] mb-[2vw] md:-mb-[4rem] z-20">
+                        <img src="{% static 'media/images/Photo.png' %}" alt="Viktor Greg Lim"
+                             class="mx-auto h-[50vh] md:h-[75vh] object-cover object-top grayscale contrast-125 drop-shadow-2xl">
+                    </div>
+                    <h1 class="hero-text-front font-sans font-black text-[13vw] md:text-[11rem] leading-[0.8] tracking-tighter uppercase text-outline relative z-30">
+                        & Developer
+                    </h1>
+                </div>
+                <p class="mt-12 text-sm font-bold tracking-[0.2em] uppercase text-muted">Based in Zamboanga City, Philippines</p>
+                <div class="absolute bottom-10 left-1/2 transform -translate-x-1/2 animate-bounce hidden md:block">
+                    <svg class="w-6 h-6 text-dark" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"/>
+                    </svg>
+                </div>
+            </div>
+        </section>
+
+        <!-- ════════════ ABOUT ════════════ -->
+        <section id="about" class="py-20 bg-white">
+            <div class="container mx-auto px-6 md:px-12">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-16 items-center">
+                    <div>
+                        <h2 class="font-serif text-4xl md:text-5xl font-bold mb-8 text-dark relative inline-block">
+                            About Me
+                            <span class="absolute bottom-2 left-0 w-1/2 h-3 bg-accent/30 -z-10"></span>
+                        </h2>
+                        <h3 class="text-2xl font-bold mb-4">Viktor Greg Lim</h3>
+                        <p class="text-xl text-accent font-medium mb-6">Front-End Developer & Graphic Designer</p>
+                        <p class="text-muted text-lg leading-relaxed mb-8">
+                            Creative and detail-oriented graphic designer and developer with experience in creating compelling visual concepts for various brands and media. I am passionate about bridging the gap between design and technology to build user-centric digital experiences.
+                        </p>
+                        <div class="flex flex-wrap gap-4 text-sm font-bold uppercase tracking-wider">
+                            <a href="mailto:limviktorgreg14@gmail.com" class="flex items-center gap-2 hover:text-accent transition-colors">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+                                limviktorgreg14@gmail.com
+                            </a>
+                            <span class="flex items-center gap-2">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.948V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
+                                0953-866-7613
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="bg-light p-8 md:p-12 shadow-sm border-l-4 border-accent">
+                        <h3 class="font-serif text-3xl font-bold mb-8">Skills</h3>
+                        <div class="space-y-6" id="skills-container">
+                            <div>
+                                <div class="flex justify-between mb-2 font-medium"><span>Adobe Photoshop</span><span class="text-accent font-bold">85%</span></div>
+                                <div class="h-2 w-full bg-gray-200 rounded-full overflow-hidden">
+                                    <div class="h-full skill-bar-fill rounded-full" style="--target-width:85%"></div>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="flex justify-between mb-2 font-medium"><span>Canva</span><span class="text-accent font-bold">95%</span></div>
+                                <div class="h-2 w-full bg-gray-200 rounded-full overflow-hidden">
+                                    <div class="h-full skill-bar-fill rounded-full" style="--target-width:95%"></div>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="flex justify-between mb-2 font-medium"><span>Figma</span><span class="text-accent font-bold">90%</span></div>
+                                <div class="h-2 w-full bg-gray-200 rounded-full overflow-hidden">
+                                    <div class="h-full skill-bar-fill rounded-full" style="--target-width:90%"></div>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="flex justify-between mb-2 font-medium"><span>UI/UX Design</span><span class="text-accent font-bold">95%</span></div>
+                                <div class="h-2 w-full bg-gray-200 rounded-full overflow-hidden">
+                                    <div class="h-full skill-bar-fill rounded-full" style="--target-width:95%"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <h3 class="font-serif text-xl font-bold mt-10 mb-4">Interests</h3>
+                        <div class="flex gap-4 flex-wrap text-muted">
+                            <span class="bg-white px-4 py-2 shadow-sm rounded-full flex items-center gap-2">📷 Photography</span>
+                            <span class="bg-white px-4 py-2 shadow-sm rounded-full flex items-center gap-2">✈️ Travel</span>
+                            <span class="bg-white px-4 py-2 shadow-sm rounded-full flex items-center gap-2">🎨 Arts & Design</span>
+                            <span class="bg-white px-4 py-2 shadow-sm rounded-full flex items-center gap-2">🎧 Music</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ════════════ EXPERIENCE / EDUCATION / AWARDS ════════════ -->
+        <section class="py-20 bg-light">
+            <div class="container mx-auto px-6 md:px-12">
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-12">
+                    <div>
+                        <h2 class="font-serif text-3xl font-bold mb-8 flex items-center gap-3"><span class="text-accent">■</span> Experience</h2>
+                        <div class="space-y-8 border-l-2 border-gray-200 pl-6 ml-2 relative">
+                            <div class="relative">
+                                <span class="absolute -left-[33px] top-1 w-4 h-4 bg-accent rounded-full"></span>
+                                <h4 class="text-xl font-bold">Website Designer</h4>
+                                <p class="text-sm text-accent font-semibold mb-2">2021 - Present</p>
+                                <p class="text-muted">Lead visual projects and develop brand identities.</p>
+                            </div>
+                            <div class="relative">
+                                <span class="absolute -left-[33px] top-1 w-4 h-4 bg-accent rounded-full"></span>
+                                <h4 class="text-xl font-bold">Front-End Developer</h4>
+                                <p class="text-sm text-accent font-semibold mb-2">2018 - 2020</p>
+                                <p class="text-muted">Maintained front-end functionality without ruining the design.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div>
+                        <h2 class="font-serif text-3xl font-bold mb-8 flex items-center gap-3"><span class="text-accent">■</span> Education</h2>
+                        <div class="space-y-8 border-l-2 border-gray-200 pl-6 ml-2 relative">
+                            <div class="relative">
+                                <span class="absolute -left-[33px] top-1 w-4 h-4 bg-accent rounded-full"></span>
+                                <h4 class="text-xl font-bold leading-tight">BS in Information and Technology</h4>
+                                <p class="text-sm text-accent font-semibold mb-2">2022 - 2025</p>
+                                <p class="text-muted">Western Mindanao State University</p>
+                            </div>
+                            <div class="relative">
+                                <span class="absolute -left-[33px] top-1 w-4 h-4 bg-accent rounded-full"></span>
+                                <h4 class="text-xl font-bold leading-tight">Technical Vocational Livelihood - ICT CSS</h4>
+                                <p class="text-sm text-accent font-semibold mb-2">2021 - 2022</p>
+                                <p class="text-muted">Baliwasan Stand-Alone Senior Highschool</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div>
+                        <h2 class="font-serif text-3xl font-bold mb-8 flex items-center gap-3"><span class="text-accent">■</span> Awards / Certs</h2>
+                        <div class="space-y-6">
+                            <div class="bg-white p-6 shadow-sm border-l-4 border-muted flex justify-between items-start">
+                                <div>
+                                    <h4 class="font-bold leading-tight mb-1">Philippine Computing Students Society</h4>
+                                    <p class="text-muted text-sm">Director - PRO</p>
+                                </div>
+                                <span class="text-accent font-semibold text-sm">2024-2025</span>
+                            </div>
+                            <div class="bg-white p-6 shadow-sm border-l-4 border-muted flex justify-between items-start">
+                                <div>
+                                    <h4 class="font-bold leading-tight mb-1">Google Developers Group</h4>
+                                    <p class="text-muted text-sm">Operation Officer</p>
+                                </div>
+                                <span class="text-accent font-semibold text-sm">2024-2025</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ════════════ PROJECTS ════════════ -->
+        <section id="projects" class="py-20 bg-white">
+            <div class="container mx-auto px-6 md:px-12">
+                <h2 class="font-serif text-4xl md:text-5xl font-bold mb-4 text-center">Previous Projects</h2>
+                <p class="text-center text-muted mb-14 text-sm font-semibold uppercase tracking-widest">Click any project to explore</p>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+
+                    <div class="project-card group relative overflow-hidden shadow-lg hover:shadow-2xl transition-shadow duration-300"
+                         data-title="AguaThink" data-category="Brand Identity"
+                         data-desc="Brand identity and visual design concepts for AguaThink. Responsibilities included logo design, color palette selection, typography system, and full brand guideline documentation for both digital and print use."
+                         data-tools="Adobe Photoshop,Figma,Canva,Adobe Illustrator"
+                         data-img="{% static 'media/images/Agua.png' %}">
+                        <div class="h-80 overflow-hidden relative bg-dark">
+                            <img src="{% static 'media/images/Agua.png' %}" alt="AguaThink" class="w-full h-full object-cover object-center">
+                            <div class="card-overlay absolute inset-0 flex flex-col justify-end p-8 bg-gradient-to-t from-dark/95 via-dark/40 to-transparent">
+                                <span class="text-accent text-xs font-bold uppercase tracking-widest mb-2">Brand Identity</span>
+                                <h3 class="text-2xl font-bold text-white mb-1">AguaThink</h3>
+                                <p class="text-gray-300 text-sm">Click to explore →</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="project-card group relative overflow-hidden shadow-lg hover:shadow-2xl transition-shadow duration-300"
+                         data-title="Payroll System" data-category="Front-End Development"
+                         data-desc="Front-end interface design for a company's internal payroll management system. Focused on building a clean, data-dense dashboard that stays approachable for non-technical staff while surfacing all critical information at a glance."
+                         data-tools="HTML,CSS,JavaScript,Figma"
+                         data-img="{% static 'media/images/Toto.jfif' %}">
+                        <div class="h-80 overflow-hidden relative bg-dark">
+                            <img src="{% static 'media/images/Toto.jfif' %}" alt="Payroll System" class="w-full h-full object-cover object-center">
+                            <div class="card-overlay absolute inset-0 flex flex-col justify-end p-8 bg-gradient-to-t from-dark/95 via-dark/40 to-transparent">
+                                <span class="text-accent text-xs font-bold uppercase tracking-widest mb-2">Front-End Dev</span>
+                                <h3 class="text-2xl font-bold text-white mb-1">Payroll System</h3>
+                                <p class="text-gray-300 text-sm">Click to explore →</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="project-card group relative overflow-hidden shadow-lg hover:shadow-2xl transition-shadow duration-300"
+                         data-title="Organization Tool" data-category="UI/UX Design"
+                         data-desc="UI/UX design for a productivity and lesson-planning application aimed at educators. The design focused on calm, distraction-free interfaces with intuitive drag-and-drop interactions and clear visual hierarchy throughout."
+                         data-tools="Figma,Adobe XD,UI/UX Research,Prototyping"
+                         data-img="{% static 'media/images/LessonLink.png' %}">
+                        <div class="h-80 overflow-hidden relative bg-dark">
+                            <img src="{% static 'media/images/LessonLink.png' %}" alt="Organization Tool" class="w-full h-full object-cover object-center">
+                            <div class="card-overlay absolute inset-0 flex flex-col justify-end p-8 bg-gradient-to-t from-dark/95 via-dark/40 to-transparent">
+                                <span class="text-accent text-xs font-bold uppercase tracking-widest mb-2">UI/UX Design</span>
+                                <h3 class="text-2xl font-bold text-white mb-1">Organization Tool</h3>
+                                <p class="text-gray-300 text-sm">Click to explore →</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="project-card group relative overflow-hidden shadow-lg hover:shadow-2xl transition-shadow duration-300"
+                         data-title="Photography" data-category="Photography & Retouching"
+                         data-desc="A curated collection of visual works and photo manipulation pieces shot across Zamboanga City. Covers street photography, portrait work, and landscape compositions — all post-processed to reflect a consistent moody, cinematic aesthetic."
+                         data-tools="Adobe Photoshop,Adobe Lightroom,Capture One"
+                         data-img="{% static 'media/images/Zamboanga.jpg' %}">
+                        <div class="h-80 overflow-hidden relative bg-dark">
+                            <img src="{% static 'media/images/Zamboanga.jpg' %}" alt="Photography" class="w-full h-full object-cover object-center">
+                            <div class="card-overlay absolute inset-0 flex flex-col justify-end p-8 bg-gradient-to-t from-dark/95 via-dark/40 to-transparent">
+                                <span class="text-accent text-xs font-bold uppercase tracking-widest mb-2">Photography</span>
+                                <h3 class="text-2xl font-bold text-white mb-1">Photography</h3>
+                                <p class="text-gray-300 text-sm">Click to explore →</p>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- ════════════ FOOTER ════════════ -->
+    <footer class="bg-dark text-white py-16">
+        <div class="container mx-auto px-6 md:px-12 text-center">
+            <h2 class="font-serif text-3xl font-bold mb-6">Let's Work Together</h2>
+            <p class="text-gray-400 mb-8 max-w-lg mx-auto">I'm always open to discussing product design work or partnership opportunities.</p>
+            <button id="open-contact-footer"
+                    class="inline-block border-2 border-accent text-accent hover:bg-accent hover:text-white transition-all duration-300 px-8 py-4 text-lg font-medium uppercase tracking-widest mb-12">
+                Get In Touch
+            </button>
+            <div class="flex flex-col md:flex-row justify-between items-center border-t border-gray-800 pt-8 mt-8 text-gray-500 text-sm">
+                <p>© 2025 Viktor Greg Lim. All rights reserved.</p>
+                <div class="flex space-x-6 mt-4 md:mt-0">
+                    <a href="https://www.linkedin.com/in/viktor-greg-lim-8862a22a3/" class="hover:text-accent transition-colors">LinkedIn</a>
+                    <a href="https://github.com/ViktorGreg" class="hover:text-accent transition-colors">GitHub</a>
+                    <a href="https://www.facebook.com/V.Greg.lim" class="hover:text-accent transition-colors">Facebook</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- ════════════════════════════════════════════════
+         PROJECT MODAL
+    ════════════════════════════════════════════════ -->
+    <div id="project-modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+        <div id="modal-backdrop"></div>
+        <div id="modal-box">
+            <div id="modal-img-wrap" title="Click image to zoom">
+                <img id="modal-img" src="" alt="">
+                <span id="zoom-hint">🔍 Click to zoom</span>
+                <button id="modal-close" aria-label="Close">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+            <div class="p-8 md:p-10">
+                <div class="mb-5">
+                    <span id="modal-category" class="text-accent text-xs font-bold uppercase tracking-widest"></span>
+                    <h3 id="modal-title" class="font-serif text-3xl md:text-4xl font-bold text-dark mt-1 leading-tight"></h3>
+                </div>
+                <p id="modal-desc" class="text-muted text-base leading-relaxed mb-8"></p>
+                <div>
+                    <p class="text-xs font-bold uppercase tracking-widest text-gray-400 mb-3 flex items-center gap-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/>
+                        </svg>
+                        Tools & Technologies
+                    </p>
+                    <div id="modal-tools" class="flex flex-wrap gap-2"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ════════════════════════════════════════════════
+         CONTACT MODAL
+    ════════════════════════════════════════════════ -->
+    <div id="contact-modal" role="dialog" aria-modal="true" aria-labelledby="contact-modal-heading">
+        <div id="contact-backdrop"></div>
+
+        <div id="contact-box">
+            <!-- Gold stripe -->
+            <div class="contact-gold-bar"></div>
+
+            <!-- Dark header -->
+            <div class="contact-header-strip">
+                <button id="contact-close" aria-label="Close contact form">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+
+                <p class="text-accent text-xs font-bold uppercase tracking-widest mb-1">Portfolio Contact</p>
+                <h2 id="contact-modal-heading" class="font-serif text-2xl md:text-3xl font-bold text-white leading-snug">
+                    Send Me a Message
+                </h2>
+                <p class="text-gray-400 text-sm mt-2 flex items-center gap-2">
+                    <svg class="w-4 h-4 text-accent flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                    </svg>
+                    Sends directly to limviktorgreg14@gmail.com
+                </p>
+            </div>
+
+            <!-- Form body -->
+            <div class="contact-body">
+                <form id="contact-form" novalidate>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6">
+                        <div class="c-field">
+                            <label class="c-label" for="c-name">Your Name *</label>
+                            <input id="c-name" name="from_name" type="text"
+                                   class="c-input" placeholder="John Doe" required autocomplete="name">
+                        </div>
+                        <div class="c-field">
+                            <label class="c-label" for="c-email">Email Address *</label>
+                            <input id="c-email" name="from_email" type="email"
+                                   class="c-input" placeholder="john@example.com" required autocomplete="email">
+                        </div>
+                    </div>
+
+                    <div class="c-field">
+                        <label class="c-label" for="c-subject">Subject</label>
+                        <input id="c-subject" name="subject" type="text"
+                               class="c-input" placeholder="Project inquiry / Collaboration…">
+                    </div>
+
+                    <div class="c-field">
+                        <label class="c-label" for="c-message">Message *</label>
+                        <textarea id="c-message" name="message" rows="4"
+                                  class="c-input" placeholder="Tell me what you have in mind…" required></textarea>
+                    </div>
+
+                    <div class="flex flex-col sm:flex-row sm:items-center gap-3">
+                        <button type="submit" id="c-send-btn">
+                            <span id="c-btn-text">Send Message</span>
+                            <svg id="c-btn-icon" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
+                            </svg>
+                        </button>
+                    </div>
+
+                    <div id="c-status-wrap"></div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- ════════════ SCRIPTS ════════════ -->
+    <script>
+    // Wrap everything in DOMContentLoaded so the DOM is fully ready
+    document.addEventListener('DOMContentLoaded', function () {
+
+        /* ─────────────────────────────────────────────────────
+           EmailJS  –  fill in your 3 IDs from emailjs.com
+           Leave as-is if not set up yet; form will fall back
+           to a mailto: link automatically.
+        ───────────────────────────────────────────────────── */
+        const EMAILJS_PUBLIC_KEY  = 'YOUR_PUBLIC_KEY';   // Account → API Keys
+        const EMAILJS_SERVICE_ID  = 'YOUR_SERVICE_ID';   // Email Services → Service ID
+        const EMAILJS_TEMPLATE_ID = 'YOUR_TEMPLATE_ID';  // Email Templates → Template ID
+
+        const emailjsReady = EMAILJS_PUBLIC_KEY !== 'YOUR_PUBLIC_KEY';
+        if (emailjsReady) {
+            try { emailjs.init({ publicKey: EMAILJS_PUBLIC_KEY }); }
+            catch(e) { console.warn('EmailJS init failed:', e); }
+        }
+
+        /* ── Mobile menu ──────────────────────────────────── */
+        document.getElementById('mobile-menu-button').addEventListener('click', () => {
+            document.getElementById('mobile-menu').classList.toggle('hidden');
+        });
+        document.querySelectorAll('.mobile-link').forEach(l =>
+            l.addEventListener('click', () =>
+                document.getElementById('mobile-menu').classList.add('hidden'))
+        );
+
+        /* ── Navbar shrink ────────────────────────────────── */
+        const navbar = document.getElementById('navbar');
+        window.addEventListener('scroll', () => {
+            const past = window.scrollY > 50;
+            navbar.classList.toggle('shadow-md', past);
+            navbar.classList.toggle('py-2', past);
+            navbar.classList.toggle('py-4', !past);
+        });
+
+        /* ── Animated skill bars ──────────────────────────── */
+        const skillsContainer = document.getElementById('skills-container');
+        let skillsFired = false;
+        new IntersectionObserver((entries) => {
+            if (entries[0].isIntersecting && !skillsFired) {
+                skillsFired = true;
+                document.querySelectorAll('.skill-bar-fill').forEach((bar, i) => {
+                    setTimeout(() => bar.classList.add('animate'), i * 180);
+                });
+            }
+        }, { threshold: 0.4 }).observe(skillsContainer);
+
+        /* ══════════════════════════════════════════════════
+           CONTACT MODAL
+        ══════════════════════════════════════════════════ */
+        const contactModal = document.getElementById('contact-modal');
+        const contactForm  = document.getElementById('contact-form');
+        const sendBtn      = document.getElementById('c-send-btn');
+        const btnText      = document.getElementById('c-btn-text');
+        const btnIconWrap  = document.getElementById('c-btn-icon');
+        const statusWrap   = document.getElementById('c-status-wrap');
+
+        function openContact() {
+            contactModal.classList.add('open');
+            document.body.style.overflow = 'hidden';
+            setTimeout(() => document.getElementById('c-name').focus(), 350);
+        }
+        function closeContact() {
+            contactModal.classList.remove('open');
+            document.body.style.overflow = '';
+        }
+
+        // All triggers that open the contact modal
+        document.getElementById('open-contact-btn').addEventListener('click', openContact);
+        document.getElementById('open-contact-mobile').addEventListener('click', () => {
+            document.getElementById('mobile-menu').classList.add('hidden');
+            openContact();
+        });
+        document.getElementById('open-contact-footer').addEventListener('click', openContact);
+
+        // Close triggers
+        document.getElementById('contact-close').addEventListener('click', closeContact);
+        document.getElementById('contact-backdrop').addEventListener('click', closeContact);
+
+        /* ── Form submission ──────────────────────────────── */
+        contactForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const name    = document.getElementById('c-name').value.trim();
+            const email   = document.getElementById('c-email').value.trim();
+            const message = document.getElementById('c-message').value.trim();
+
+            // Validation
+            if (!name || !email || !message) {
+                showStatus('error', '⚠ Please fill in Name, Email, and Message.');
+                return;
+            }
+            if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+                showStatus('error', '⚠ Please enter a valid email address.');
+                return;
+            }
+
+            setLoading(true);
+            clearStatus();
+
+            // ── Path A: EmailJS (if configured) ────────────
+            if (emailjsReady) {
+                try {
+                    await emailjs.sendForm(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, contactForm);
+                    showStatus('success', '✓ Message sent! I\'ll get back to you within 24 hours.');
+                    contactForm.reset();
+                    setTimeout(closeContact, 3500);
+                } catch (err) {
+                    console.error('EmailJS error:', err);
+                    showStatus('error', '✗ Could not send. Redirecting to email client…');
+                    setTimeout(() => mailtoFallback(name, email, message), 1800);
+                } finally {
+                    setLoading(false);
+                }
+            // ── Path B: mailto fallback ─────────────────────
+            } else {
+                setLoading(false);
+                mailtoFallback(name, email, message);
+                showStatus('success', '✓ Opening your email client — message pre-filled!');
+            }
+        });
+
+        function mailtoFallback(name, email, message) {
+            const subject = document.getElementById('c-subject').value.trim() || 'Portfolio Inquiry';
+            const body    = `Name: ${name}\nEmail: ${email}\n\n${message}`;
+            window.location.href =
+                `mailto:limviktorgreg14@gmail.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+        }
+
+        function setLoading(on) {
+            sendBtn.disabled = on;
+            if (on) {
+                btnText.textContent = 'Sending…';
+                btnIconWrap.outerHTML = '<span id="c-btn-icon" class="btn-spinner"></span>';
+            } else {
+                btnText.textContent = 'Send Message';
+                const s = document.getElementById('c-btn-icon');
+                if (s) s.outerHTML =
+                    `<svg id="c-btn-icon" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
+                     </svg>`;
+            }
+        }
+
+        function showStatus(type, msg) {
+            statusWrap.innerHTML =
+                `<p class="c-status-msg ${type}">${msg}</p>`;
+        }
+        function clearStatus() { statusWrap.innerHTML = ''; }
+
+        /* ══════════════════════════════════════════════════
+           PROJECT MODAL
+        ══════════════════════════════════════════════════ */
+        const projModal = document.getElementById('project-modal');
+        const imgWrap   = document.getElementById('modal-img-wrap');
+        const modalImg  = document.getElementById('modal-img');
+
+        function openModal(card) {
+            document.getElementById('modal-title').textContent    = card.dataset.title;
+            document.getElementById('modal-category').textContent = card.dataset.category;
+            document.getElementById('modal-desc').textContent     = card.dataset.desc;
+            modalImg.src = card.dataset.img;
+            modalImg.alt = card.dataset.title;
+            modalImg.style.transformOrigin = 'center center';
+
+            const toolsEl = document.getElementById('modal-tools');
+            toolsEl.innerHTML = '';
+            card.dataset.tools.split(',').forEach(t => {
+                const pill = document.createElement('span');
+                pill.className = 'tech-tag';
+                pill.textContent = t.trim();
+                toolsEl.appendChild(pill);
+            });
+
+            imgWrap.classList.remove('zoomed');
+            projModal.classList.add('open');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeModal() {
+            imgWrap.classList.remove('zoomed');
+            projModal.classList.remove('open');
+            document.body.style.overflow = '';
+        }
+
+        document.querySelectorAll('.project-card').forEach(card =>
+            card.addEventListener('click', () => openModal(card))
+        );
+        document.getElementById('modal-close').addEventListener('click', e => {
+            e.stopPropagation(); closeModal();
+        });
+        document.getElementById('modal-backdrop').addEventListener('click', closeModal);
+
+        imgWrap.addEventListener('click', e => {
+            if (e.target.closest('#modal-close')) return;
+            const zoomed = imgWrap.classList.toggle('zoomed');
+            if (zoomed) {
+                const r = imgWrap.getBoundingClientRect();
+                modalImg.style.transformOrigin =
+                    `${((e.clientX-r.left)/r.width)*100}% ${((e.clientY-r.top)/r.height)*100}%`;
+            }
+        });
+
+        /* ── Escape closes whichever modal is open ────────── */
+        document.addEventListener('keydown', e => {
+            if (e.key === 'Escape') { closeContact(); closeModal(); }
+        });
+
+    }); // end DOMContentLoaded
+    </script>
+
+</body>
+</html>
